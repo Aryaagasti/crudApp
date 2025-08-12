@@ -35,7 +35,7 @@ The app is structured with separate folders for:
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/your-repo-name.gi](https://github.com/Aryaagasti/crudApp)
+git clone https://github.com/Aryaagasti/crudApp
 cd your-repo-name
 ```
 
