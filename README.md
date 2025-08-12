@@ -34,17 +34,23 @@ The app is structured with separate folders for:
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
 
+
+---
+
 ### 2️⃣Frontend Setup (client/)
 ```bash
 cd client
 npm install
 npm run build
 
+---
+
 ### 3️⃣  Backend Setup (server/)
 ```bash
 cd ../server
 npm install
 
+---
 
 ### Create PostgreSQL Database & Table:
 ```bash
@@ -57,6 +63,8 @@ CREATE TABLE users (
     address TEXT NOT NULL
 );
 
+---
+
 ### 4️⃣ Environment Variables (.env in server/)
 ### Create a .env file inside server/ folder:
 ```bash
@@ -66,6 +74,8 @@ DB_NAME=your_database_name
 DB_PASSWORD=your_postgres_password
 DB_PORT=5432
 PORT=3000
+
+---
 
 ### 5️⃣ Running the Application
 ### Start Backend
