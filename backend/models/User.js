@@ -11,18 +11,37 @@ class User {
   }
 
   static async findAll() {
-    const result = await pool.query('SELECT * FROM users');
-    return result.rows;
-  }
+  const result = await pool.query(`
+    SELECT 
+      id,
+      first_name,
+      last_name,
+      TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
+      mobile_number,
+      address
+    FROM users
+  `);
+  return result.rows;
+}
 
-  static async findById(id) {
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
-      throw new Error('User not found');
-    }
-    return result.rows[0];
+static async findById(id) {
+  const result = await pool.query(`
+    SELECT 
+      id,
+      first_name,
+      last_name,
+      TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
+      mobile_number,
+      address
+    FROM users
+    WHERE id = $1
+  `, [id]);
+  
+  if (result.rows.length === 0) {
+    throw new Error('User not found');
   }
-
+  return result.rows[0];
+}
   static async update(id, user) {
     const { first_name, last_name, date_of_birth, mobile_number, address } = user;
     const result = await pool.query(
