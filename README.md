@@ -13,10 +13,10 @@ The app allows users to manage personal records with the following fields:
 
 ## ✨ Features
 
-- **Create** ➡ Add a new user via a form and save it to the PostgreSQL database
-- **Read** ➡ View all users in a table below the form
-- **Update** ➡ Edit a user's details directly in the table and save changes
-- **Delete** ➡ Remove a user from the table and database
+- **Create** ➡ Add a new user via a form and save it to the PostgreSQL database  
+- **Read** ➡ View all users in a table below the form  
+- **Update** ➡ Edit a user's details directly in the table and save changes  
+- **Delete** ➡ Remove a user from the table and database  
 
 ## 🛠️ Tech Stack
 
@@ -35,9 +35,9 @@ The app is structured with separate folders for:
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-```
+git clone https://github.com/Aryaagasti/crudApp
+cd crudApp
+
 
 ### 2️⃣ Frontend Setup (client/)
 
@@ -152,4 +152,3 @@ This project is created for educational purposes as part of an internship progra
 
 ## 📞 Contact
 
-For any questions or support, please reach out to the development team at Claim Genius.
