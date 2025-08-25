@@ -10,17 +10,19 @@ class User {
     return result.rows[0];
   }
 
-  static async findAll() {
-  const result = await pool.query(`
-    SELECT 
-      id,
-      first_name,
-      last_name,
-      TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
-      mobile_number,
-      address
-    FROM users
-  `);
+  static async findAll({search, limit, offset, SortBy, order}) {
+  let query =  'SELECT * FROM users';
+  const values = [];
+  if (search){
+    query += 'WHERE first_name ILIKE $1 OR last_name ILIKE $1';
+    values.push(`%${search}%`);
+  }
+
+  query += `ORDER BY ${SortBy} ${order}`
+  query += ' LIMIT $2 OFFSET $3';
+  values.push(limit, offset);
+
+  const result = await pool.query(query, values);
   return result.rows;
 }
 
