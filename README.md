@@ -34,10 +34,7 @@ The app is structured with separate folders for:
 
 ### 1️⃣ Clone the Repository
 
-```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-```
+
 
 ### 2️⃣ Frontend Setup (client/)
 
@@ -152,4 +149,4 @@ This project is created for educational purposes as part of an internship progra
 
 ## 📞 Contact
 
-For any questions or support, please reach out to the development team at Claim Genius.
+
