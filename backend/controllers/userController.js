@@ -8,7 +8,14 @@ const getAllUsers = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
   try {
-    const users = await User.findAll();
+    const params = {
+      search: req.query.search || '',
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      sortBy: req.query.sortBy || 'first_name',
+      order: req.query.order || 'ASC'
+    };
+    const users = await User.findAll(params);
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });

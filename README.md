@@ -34,9 +34,7 @@ The app is structured with separate folders for:
 
 ### 1️⃣ Clone the Repository
 
-```bash
-git clone https://github.com/Aryaagasti/crudApp
-cd crudApp
+
 
 
 ### 2️⃣ Frontend Setup (client/)
