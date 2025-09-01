@@ -10,6 +10,7 @@ class User {
     return result.rows[0];
   }
 
+
   static async findAll({search, limit, offset, SortBy, order}) {
   let query =  'SELECT * FROM users';
   const values = [];
@@ -23,6 +24,21 @@ class User {
   values.push(limit, offset);
 
   const result = await pool.query(query, values);
+  return result.rows;
+}
+
+
+  static async findAll() {
+  const result = await pool.query(`
+    SELECT 
+      id,
+      first_name,
+      last_name,
+      TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
+      mobile_number,
+      address
+    FROM users
+  `);
   return result.rows;
 }
 
