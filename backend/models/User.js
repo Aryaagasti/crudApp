@@ -10,8 +10,7 @@ class User {
     return result.rows[0];
   }
 
-
-  static async findAll({search, limit, offset, SortBy, order}) {
+static async findAll({search, limit, offset, SortBy, order}) {
   let query =  'SELECT * FROM users';
   const values = [];
   if (search){
@@ -27,20 +26,12 @@ class User {
   return result.rows;
 }
 
-
-  static async findAll() {
-  const result = await pool.query(`
-    SELECT 
-      id,
-      first_name,
-      last_name,
-      TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
-      mobile_number,
-      address
-    FROM users
-  `);
+static async findAll() {
+  const result = await pool.query('SELECT * FROM users ORDER BY id ASC');
   return result.rows;
 }
+
+
 
 static async findById(id) {
   const result = await pool.query(`
