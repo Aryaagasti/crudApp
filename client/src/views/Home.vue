@@ -182,20 +182,27 @@ export default {
     const totalPages = computed(() => Math.ceil(sortedUsers.value.length / 5));
 
     const addUser = async () => {
-      if (!validateForm()) return;
-      try {
-        const response = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(state.form)
-        });
-        if (!response.ok) throw new Error('Failed to add user');
-        state.form = { firstName: '', lastName: '', dateOfBirth: '', mobileNumber: '', address: '' };
-        await fetchUsers();
-      } catch (error) {
-        console.error('Error adding user:', error);
-      }
-    };
+  if (!validateForm()) return;
+  try {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: state.form.firstName,
+        last_name: state.form.lastName,
+        date_of_birth: state.form.dateOfBirth,
+        mobile_number: state.form.mobileNumber,
+        address: state.form.address,
+      })
+    });
+    if (!response.ok) throw new Error('Failed to add user');
+    state.form = { firstName: '', lastName: '', dateOfBirth: '', mobileNumber: '', address: '' };
+    await fetchUsers();
+  } catch (error) {
+    console.error('Error adding user:', error);
+  }
+};
+
 
  const fetchUsers = async () => {
   try {
@@ -213,20 +220,27 @@ export default {
       state.users = state.users.map(user => user.id === id ? { ...user, isEditing: true } : user);
     };
 
-    const updateUser = async (id) => {
-      const user = state.users.find(u => u.id === id);
-      try {
-        const response = await fetch(`/api/users/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(user)
-        });
-        if (!response.ok) throw new Error('Failed to update user');
-        await fetchUsers();
-      } catch (error) {
-        console.error('Error updating user:', error);
-      }
-    };
+   const updateUser = async (id) => {
+  const user = state.users.find(u => u.id === id);
+  try {
+    const response = await fetch(`/api/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: user.first_name,
+        last_name: user.last_name,
+        date_of_birth: user.date_of_birth,
+        mobile_number: user.mobile_number,
+        address: user.address,
+      })
+    });
+    if (!response.ok) throw new Error('Failed to update user');
+    await fetchUsers();
+  } catch (error) {
+    console.error('Error updating user:', error);
+  }
+};
+
 
     const deleteUser = async (id) => {
       try {
