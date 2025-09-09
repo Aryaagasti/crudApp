@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",                     // latest JS features
+    "useDefineForClassFields": true,
+    "module": "ESNext",                     // Vite ke liye ESNext module
+    "moduleResolution": "bundler",          // 👈 Vite/modern bundler friendly
+    "strict": true,                         // strict type checking
+    "jsx": "preserve",                      // Vue ke liye JSX preserve
+    "allowJs": true,                        // JS files bhi allow honge
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext", "DOM"],               // Browser + latest JS
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]                      // @ ko src se map karega
+    },
+    "noEmit": true                          // 👈 Output JS generate nahi karega (sirf type check)
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue"
+  ],
+  "exclude": ["node_modules"]
+}
