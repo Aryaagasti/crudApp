@@ -187,6 +187,9 @@
               >
                 Delete
               </button>
+              <button @click="canceleEdit()" class="bg-gray-500 text-white p-2 rounded" v-if="user.isEditing">
+                Cancel
+              </button>
             </td>
           </tr>
         </tbody>
@@ -391,6 +394,12 @@ export default {
       Object.values(state.errors).some((e) => e)
     );
 
+    const canceleEdit = ()=>{
+      state.users = state.users.map((user) =>
+        user.isEditing ? { ...user, isEditing: false } : user
+      );
+    }
+
     fetchUsers();
 
     return {
@@ -405,6 +414,7 @@ export default {
       deleteUser,
       currentPage,
       hasErrors,
+      canceleEdit
     };
   },
 };

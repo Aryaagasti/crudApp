@@ -1,11 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",                     // latest JS features
-    "useDefineForClassFields": true,
     "module": "ESNext",                     // Vite ke liye ESNext module
     "moduleResolution": "bundler",          // 👈 Vite/modern bundler friendly
-    "strict": true,                         // strict type checking
-    "jsx": "preserve",                      // Vue ke liye JSX preserve
+    "strict": true,                         // strict type checking                    // Vue ke liye JSX preserve
     "allowJs": true,                        // JS files bhi allow honge
     "resolveJsonModule": true,
     "isolatedModules": true,

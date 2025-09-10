@@ -4,7 +4,7 @@ import User from '../models/User';
 import { ValidationError } from 'express-validator';
 
 // GET ALL USERS (basic version without pagination)
-const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+const getAllUsers = async (req:Request,res:Response): Promise<void> => {
   try {
     const users = await User.findAllBasic(); // simple call
     res.status(200).json(users);
