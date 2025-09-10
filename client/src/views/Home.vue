@@ -1,4 +1,5 @@
 <template>
+  <!-- Same as your original template, no changes needed -->
   <div class="container mx-auto p-4">
     <!-- Add User Form -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">Add New User</h2>
@@ -6,73 +7,59 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Name -->
         <div>
-          <label for="firstName" class="block mb-1 text-gray-700 font-medium"
-            >First Name</label
-          >
+          <label for="firstName" class="block mb-1 text-gray-700 font-medium">First Name</label>
           <input
             id="firstName"
             v-model="state.form.firstName"
             class="p-2 border rounded w-full"
             placeholder="Enter First Name"
           />
-          <p v-if="state.errors.firstName" class="text-red-500 text-sm mt-1">
-            {{ state.errors.firstName }}
+          <p v-if="state.errors.first_name" class="text-red-500 text-sm mt-1">
+            {{ state.errors.first_name }}
           </p>
         </div>
-
         <!-- Last Name -->
         <div>
-          <label for="lastName" class="block mb-1 text-gray-700 font-medium"
-            >Last Name</label
-          >
+          <label for="lastName" class="block mb-1 text-gray-700 font-medium">Last Name</label>
           <input
             id="lastName"
             v-model="state.form.lastName"
             class="p-2 border rounded w-full"
             placeholder="Enter Last Name"
           />
-          <p v-if="state.errors.lastName" class="text-red-500 text-sm mt-1">
-            {{ state.errors.lastName }}
+          <p v-if="state.errors.last_name" class="text-red-500 text-sm mt-1">
+            {{ state.errors.last_name }}
           </p>
         </div>
-
         <!-- DOB -->
         <div>
-          <label for="dob" class="block mb-1 text-gray-700 font-medium"
-            >Date of Birth</label
-          >
+          <label for="dob" class="block mb-1 text-gray-700 font-medium">Date of Birth</label>
           <input
             id="dob"
             type="date"
             v-model="state.form.dateOfBirth"
             class="p-2 border rounded w-full"
           />
-          <p v-if="state.errors.dateOfBirth" class="text-red-500 text-sm mt-1">
-            {{ state.errors.dateOfBirth }}
+          <p v-if="state.errors.date_of_birth" class="text-red-500 text-sm mt-1">
+            {{ state.errors.date_of_birth }}
           </p>
         </div>
-
         <!-- Mobile -->
         <div>
-          <label for="mobile" class="block mb-1 text-gray-700 font-medium"
-            >Mobile Number</label
-          >
+          <label for="mobile" class="block mb-1 text-gray-700 font-medium">Mobile Number</label>
           <input
             id="mobile"
             v-model="state.form.mobileNumber"
             class="p-2 border rounded w-full"
             placeholder="Enter Mobile Number"
           />
-          <p v-if="state.errors.mobileNumber" class="text-red-500 text-sm mt-1">
-            {{ state.errors.mobileNumber }}
+          <p v-if="state.errors.mobile_number" class="text-red-500 text-sm mt-1">
+            {{ state.errors.mobile_number }}
           </p>
         </div>
-
         <!-- Address -->
         <div class="md:col-span-2">
-          <label for="address" class="block mb-1 text-gray-700 font-medium"
-            >Address</label
-          >
+          <label for="address" class="block mb-1 text-gray-700 font-medium">Address</label>
           <textarea
             id="address"
             v-model="state.form.address"
@@ -84,7 +71,6 @@
           </p>
         </div>
       </div>
-
       <!-- Button -->
       <div class="mt-6">
         <button
@@ -96,7 +82,6 @@
         </button>
       </div>
     </div>
-
     <!-- User List -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">User List</h2>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg">
@@ -187,7 +172,11 @@
               >
                 Delete
               </button>
-              <button @click="canceleEdit()" class="bg-gray-500 text-white p-2 rounded" v-if="user.isEditing">
+              <button
+                @click="canceleEdit()"
+                class="bg-gray-500 text-white p-2 rounded"
+                v-if="user.isEditing"
+              >
                 Cancel
               </button>
             </td>
@@ -261,13 +250,16 @@ export default {
     });
 
     const validateForm = () => {
-      state.errors.firstName = !state.form.firstName ? "Required" : "";
-      state.errors.lastName = !state.form.lastName ? "Required" : "";
-      state.errors.dateOfBirth = !state.form.dateOfBirth ? "Required" : "";
-      state.errors.mobileNumber = !/^\d{10}$/.test(state.form.mobileNumber)
+      state.errors = {}; // Reset errors
+      state.errors.first_name = !state.form.firstName ? "First name is required" : "";
+      state.errors.last_name = !state.form.lastName ? "Last name is required" : "";
+      state.errors.date_of_birth = !state.form.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(state.form.dateOfBirth)
+        ? "Valid date (YYYY-MM-DD) required"
+        : "";
+      state.errors.mobile_number = !/^\d{10}$/.test(state.form.mobileNumber)
         ? "10 digits required"
         : "";
-      state.errors.address = !state.form.address ? "Required" : "";
+      state.errors.address = !state.form.address ? "Address is required" : "";
       return Object.values(state.errors).every((e) => !e);
     };
 
@@ -317,7 +309,14 @@ export default {
             address: state.form.address,
           }),
         });
-        if (!response.ok) throw new Error("Failed to add user");
+        if (!response.ok) {
+          const errorData = await response.json();
+          state.errors = {}; // Reset errors
+          errorData.errors.forEach((err: any) => {
+            state.errors[err.param] = err.msg; // Set backend errors to UI
+          });
+          throw new Error("Failed to add user");
+        }
         state.form = {
           firstName: "",
           lastName: "",
@@ -325,6 +324,7 @@ export default {
           mobileNumber: "",
           address: "",
         };
+        state.errors = {}; // Clear errors after success
         await fetchUsers();
       } catch (error) {
         console.error("Error adding user:", error);
@@ -342,14 +342,14 @@ export default {
     };
 
     const editUser = (id?: number) => {
-      if (id === undefined) return; // guard clause
+      if (id === undefined) return;
       state.users = state.users.map((user) =>
         user.id === id ? { ...user, isEditing: true } : user
       );
     };
 
     const updateUser = async (id?: number) => {
-      if (id === undefined) return; // guard clause
+      if (id === undefined) return;
       const user = state.users.find((u) => u.id === id);
       if (!user) return;
       try {
@@ -372,7 +372,7 @@ export default {
     };
 
     const deleteUser = async (id?: number) => {
-      if (id === undefined) return; // guard clause
+      if (id === undefined) return;
       try {
         const response = await fetch(`/api/users/${id}`, { method: "DELETE" });
         if (!response.ok) throw new Error("Failed to delete user");
@@ -394,11 +394,11 @@ export default {
       Object.values(state.errors).some((e) => e)
     );
 
-    const canceleEdit = ()=>{
+    const canceleEdit = () => {
       state.users = state.users.map((user) =>
         user.isEditing ? { ...user, isEditing: false } : user
       );
-    }
+    };
 
     fetchUsers();
 
@@ -414,7 +414,7 @@ export default {
       deleteUser,
       currentPage,
       hasErrors,
-      canceleEdit
+      canceleEdit,
     };
   },
 };
