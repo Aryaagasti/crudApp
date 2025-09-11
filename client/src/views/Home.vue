@@ -571,6 +571,7 @@ export default {
     const cancelEdit = (id?: number) => {
       if (id === undefined) return;
       const user = state.users.find(u => u.id === id);
+      if(!user) return;
       if (user && user.originalData) {
         // Restore original data
         Object.assign(user, user.originalData);
@@ -595,6 +596,7 @@ export default {
       goToPage,
       handleSearch,
       handleSortChange,
+      fetchUsers
     };
   },
 };
