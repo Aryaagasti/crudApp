@@ -1,72 +1,108 @@
 <template>
-  <!-- Same as your original template, no changes needed -->
   <div class="container mx-auto p-4">
     <!-- Add User Form -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">Add New User</h2>
+    <!-- Success/Error Message -->
+    <div
+      v-if="state.message"
+      :class="
+        state.messageType === 'success'
+          ? 'bg-green-100 text-green-700'
+          : 'bg-red-100 text-red-700'
+      "
+      class="p-4 mb-4 rounded"
+    >
+      {{ state.message }}
+    </div>
     <div class="bg-white shadow-md rounded-lg p-6 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Name -->
         <div>
-          <label for="firstName" class="block mb-1 text-gray-700 font-medium">First Name</label>
+          <label for="firstName" class="block mb-1 text-gray-700 font-medium"
+            >First Name</label
+          >
           <input
             id="firstName"
             v-model="state.form.firstName"
             class="p-2 border rounded w-full"
             placeholder="Enter First Name"
           />
-          <p v-if="state.errors.first_name" class="text-red-500 text-sm mt-1">
+          <p
+            v-if="state.formSubmitted && state.errors.first_name"
+            class="text-red-500 text-sm mt-1"
+          >
             {{ state.errors.first_name }}
           </p>
         </div>
         <!-- Last Name -->
         <div>
-          <label for="lastName" class="block mb-1 text-gray-700 font-medium">Last Name</label>
+          <label for="lastName" class="block mb-1 text-gray-700 font-medium"
+            >Last Name</label
+          >
           <input
             id="lastName"
             v-model="state.form.lastName"
             class="p-2 border rounded w-full"
             placeholder="Enter Last Name"
           />
-          <p v-if="state.errors.last_name" class="text-red-500 text-sm mt-1">
+          <p
+            v-if="state.formSubmitted && state.errors.last_name"
+            class="text-red-500 text-sm mt-1"
+          >
             {{ state.errors.last_name }}
           </p>
         </div>
         <!-- DOB -->
         <div>
-          <label for="dob" class="block mb-1 text-gray-700 font-medium">Date of Birth</label>
+          <label for="dob" class="block mb-1 text-gray-700 font-medium"
+            >Date of Birth</label
+          >
           <input
             id="dob"
             type="date"
             v-model="state.form.dateOfBirth"
             class="p-2 border rounded w-full"
           />
-          <p v-if="state.errors.date_of_birth" class="text-red-500 text-sm mt-1">
+          <p
+            v-if="state.formSubmitted && state.errors.date_of_birth"
+            class="text-red-500 text-sm mt-1"
+          >
             {{ state.errors.date_of_birth }}
           </p>
         </div>
         <!-- Mobile -->
         <div>
-          <label for="mobile" class="block mb-1 text-gray-700 font-medium">Mobile Number</label>
+          <label for="mobile" class="block mb-1 text-gray-700 font-medium"
+            >Mobile Number</label
+          >
           <input
             id="mobile"
             v-model="state.form.mobileNumber"
             class="p-2 border rounded w-full"
             placeholder="Enter Mobile Number"
           />
-          <p v-if="state.errors.mobile_number" class="text-red-500 text-sm mt-1">
+          <p
+            v-if="state.formSubmitted && state.errors.mobile_number"
+            class="text-red-500 text-sm mt-1"
+          >
             {{ state.errors.mobile_number }}
           </p>
         </div>
         <!-- Address -->
         <div class="md:col-span-2">
-          <label for="address" class="block mb-1 text-gray-700 font-medium">Address</label>
+          <label for="address" class="block mb-1 text-gray-700 font-medium"
+            >Address</label
+          >
           <textarea
             id="address"
             v-model="state.form.address"
             class="p-2 border rounded w-full h-24"
             placeholder="Enter Address"
           ></textarea>
-          <p v-if="state.errors.address" class="text-red-500 text-sm mt-1">
+          <p
+            v-if="state.formSubmitted && state.errors.address"
+            class="text-red-500 text-sm mt-1"
+          >
             {{ state.errors.address }}
           </p>
         </div>
@@ -76,9 +112,9 @@
         <button
           @click="addUser"
           class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition w-full md:w-auto"
-          :disabled="hasErrors"
+          :disabled="state.isLoading"
         >
-          Add User
+          {{ state.isLoading ? "Adding..." : "Add User" }}
         </button>
       </div>
     </div>
@@ -90,11 +126,17 @@
           v-model="state.search"
           placeholder="Search by Name"
           class="p-2 border rounded w-full mr-2"
+          @input="handleSearch"
         />
-        <select v-model="state.sortColumn" class="p-2 border rounded">
+        <select v-model="state.sortColumn" class="p-2 border rounded mr-2" @change="handleSortChange">
           <option value="">Sort by</option>
           <option value="first_name">First Name</option>
+          <option value="last_name">Last Name</option>
           <option value="date_of_birth">DOB</option>
+        </select>
+        <select v-model="state.sortOrder" class="p-2 border rounded" @change="fetchUsers">
+          <option value="ASC">Ascending</option>
+          <option value="DESC">Descending</option>
         </select>
       </div>
       <table class="w-full text-left">
@@ -109,7 +151,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.id" class="border-b">
+          <tr v-for="user in state.users" :key="user.id" class="border-b">
             <td class="p-3">
               <input
                 v-if="user.isEditing"
@@ -152,50 +194,67 @@
               <span v-else>{{ user.address }}</span>
             </td>
             <td class="p-3">
-              <button
-                v-if="!user.isEditing"
-                @click="editUser(user.id)"
-                class="bg-blue-500 text-white p-2 rounded"
-              >
-                Edit
-              </button>
-              <button
-                v-if="user.isEditing"
-                @click="updateUser(user.id)"
-                class="bg-yellow-500 text-white p-2 rounded"
-              >
-                Update
-              </button>
-              <button
-                @click="deleteUser(user.id)"
-                class="bg-red-500 text-white p-2 rounded"
-              >
-                Delete
-              </button>
-              <button
-                @click="canceleEdit()"
-                class="bg-gray-500 text-white p-2 rounded"
-                v-if="user.isEditing"
-              >
-                Cancel
-              </button>
+              <div class="flex space-x-2">
+                <button
+                  v-if="!user.isEditing"
+                  @click="editUser(user.id)"
+                  class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                >
+                  Edit
+                </button>
+                <button
+                  v-if="user.isEditing"
+                  @click="updateUser(user.id)"
+                  class="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+                >
+                  Update
+                </button>
+                <button
+                  @click="deleteUser(user.id)"
+                  class="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+                <button
+                  @click="cancelEdit(user.id)"
+                  class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+                  v-if="user.isEditing"
+                >
+                  Cancel
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
-      <div class="flex justify-center mt-4">
+      <div class="flex justify-center mt-4 space-x-2">
         <button
-          @click="currentPage--"
+          @click="decrementPage"
           :disabled="state.currentPage === 1"
-          class="bg-gray-500 text-white p-2 rounded mr-2"
+          class="bg-gray-500 text-white px-3 py-2 rounded disabled:opacity-50"
         >
           Previous
         </button>
-        <span>Page {{ state.currentPage }} of {{ totalPages }}</span>
+
+        <!-- Page numbers -->
         <button
-          @click="currentPage++"
-          :disabled="state.currentPage === totalPages"
-          class="bg-gray-500 text-white p-2 rounded ml-2"
+          v-for="page in state.totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            'px-3 py-2 rounded',
+            state.currentPage === page
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+          ]"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          @click="incrementPage"
+          :disabled="state.currentPage === state.totalPages"
+          class="bg-gray-500 text-white px-3 py-2 rounded disabled:opacity-50"
         >
           Next
         </button>
@@ -215,6 +274,7 @@ interface User {
   mobile_number: string;
   address: string;
   isEditing?: boolean;
+  originalData?: Partial<User>;
 }
 
 interface FormState {
@@ -233,7 +293,14 @@ export default {
       errors: Record<string, string>;
       search: string;
       sortColumn: string;
+      sortOrder: string;
       currentPage: number;
+      message: string;
+      messageType: "success" | "error" | "";
+      isLoading: boolean;
+      formSubmitted: boolean;
+      totalPages: number;
+      searchTimeout: any;
     }>({
       users: [],
       form: {
@@ -246,20 +313,37 @@ export default {
       errors: {},
       search: "",
       sortColumn: "",
+      sortOrder: "ASC",
       currentPage: 1,
+      message: "",
+      messageType: "",
+      isLoading: false,
+      formSubmitted: false,
+      totalPages: 1,
+      searchTimeout: null,
     });
 
     const validateForm = () => {
-      state.errors = {}; // Reset errors
-      state.errors.first_name = !state.form.firstName ? "First name is required" : "";
-      state.errors.last_name = !state.form.lastName ? "Last name is required" : "";
-      state.errors.date_of_birth = !state.form.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(state.form.dateOfBirth)
-        ? "Valid date (YYYY-MM-DD) required"
+      state.errors = {};
+      state.errors.first_name = !state.form.firstName.trim()
+        ? "First name is required"
         : "";
-      state.errors.mobile_number = !/^\d{10}$/.test(state.form.mobileNumber)
+      state.errors.last_name = !state.form.lastName.trim()
+        ? "Last name is required"
+        : "";
+      state.errors.date_of_birth =
+        !state.form.dateOfBirth ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(state.form.dateOfBirth)
+          ? "Valid date (YYYY-MM-DD) required"
+          : "";
+      state.errors.mobile_number = !/^\d{10}$/.test(
+        state.form.mobileNumber.trim()
+      )
         ? "10 digits required"
         : "";
-      state.errors.address = !state.form.address ? "Address is required" : "";
+      state.errors.address = !state.form.address.trim()
+        ? "Address is required"
+        : "";
       return Object.values(state.errors).every((e) => !e);
     };
 
@@ -267,55 +351,75 @@ export default {
       return date ? new Date(date).toLocaleDateString() : "";
     };
 
-    const filteredUsers = computed(() =>
-      state.users.filter(
-        (u) =>
-          u.first_name.includes(state.search) ||
-          u.last_name.includes(state.search)
-      )
-    );
+    const handleSearch = () => {
+      // Debounce search to avoid too many API calls
+      clearTimeout(state.searchTimeout);
+      state.searchTimeout = setTimeout(() => {
+        state.currentPage = 1;
+        fetchUsers();
+      }, 500);
+    };
 
-    const sortedUsers = computed(() => {
-      const sorted = [...filteredUsers.value];
-      if (state.sortColumn === "first_name")
-        sorted.sort((a, b) => a.first_name.localeCompare(b.first_name));
-      if (state.sortColumn === "date_of_birth")
-        sorted.sort(
-          (a, b) =>
-            new Date(a.date_of_birth).getTime() -
-            new Date(b.date_of_birth).getTime()
-        );
-      return sorted;
-    });
+    const handleSortChange = () => {
+      state.currentPage = 1;
+      fetchUsers();
+    };
 
-    const paginatedUsers = computed(() => {
-      const start = (state.currentPage - 1) * 5;
-      return sortedUsers.value.slice(start, start + 5);
-    });
+    const incrementPage = async () => {
+      if (state.currentPage < state.totalPages) {
+        state.currentPage++;
+        await fetchUsers();
+      }
+    };
 
-    const totalPages = computed(() => Math.ceil(sortedUsers.value.length / 5));
+    const decrementPage = async () => {
+      if (state.currentPage > 1) {
+        state.currentPage--;
+        await fetchUsers();
+      }
+    };
+
+    const goToPage = async (page: number) => {
+      if (page >= 1 && page <= state.totalPages) {
+        state.currentPage = page;
+        await fetchUsers();
+      }
+    };
 
     const addUser = async () => {
-      if (!validateForm()) return;
+      state.formSubmitted = true;
+      state.message = "";
+      state.messageType = "";
+      if (!validateForm()) {
+        state.message = "Please fix the errors in the form";
+        state.messageType = "error";
+        return;
+      }
+      state.isLoading = true;
       try {
         const response = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            first_name: state.form.firstName,
-            last_name: state.form.lastName,
+            first_name: state.form.firstName.trim(),
+            last_name: state.form.lastName.trim(),
             date_of_birth: state.form.dateOfBirth,
-            mobile_number: state.form.mobileNumber,
-            address: state.form.address,
+            mobile_number: state.form.mobileNumber.trim(),
+            address: state.form.address.trim(),
           }),
         });
+        const responseData = await response.json();
         if (!response.ok) {
-          const errorData = await response.json();
-          state.errors = {}; // Reset errors
-          errorData.errors.forEach((err: any) => {
-            state.errors[err.param] = err.msg; // Set backend errors to UI
-          });
-          throw new Error("Failed to add user");
+          state.errors = {};
+          state.message = responseData.message || "Failed to add user";
+          state.messageType = "error";
+          if (responseData.errors) {
+            responseData.errors.forEach((err: any) => {
+              state.errors[err.param] = err.msg;
+            });
+          }
+          state.isLoading = false;
+          return;
         }
         state.form = {
           firstName: "",
@@ -324,27 +428,59 @@ export default {
           mobileNumber: "",
           address: "",
         };
-        state.errors = {}; // Clear errors after success
+        state.errors = {};
+        state.formSubmitted = false;
+        state.message = responseData.message || "User created successfully";
+        state.messageType = "success";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
         await fetchUsers();
       } catch (error) {
-        console.error("Error adding user:", error);
+        state.message = `Error adding user: ${(error as Error).message}`;
+        state.messageType = "error";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+      } finally {
+        state.isLoading = false;
       }
     };
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch("/api/users");
-        if (!response.ok) throw new Error("Network response was not ok");
-        state.users = await response.json();
+        const response = await fetch(
+          `/api/users?page=${state.currentPage}&limit=5&search=${
+            state.search
+          }&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`
+        );
+        const responseData = await response.json();
+        if (!response.ok) {
+          state.message = responseData.message || "Failed to fetch users";
+          state.messageType = "error";
+          return;
+        }
+        state.users = responseData.data || [];
+        state.totalPages = responseData.pagination?.totalPages || 1;
       } catch (error) {
-        console.error("Fetch error:", error);
+        state.message = `Error fetching users: ${(error as Error).message}`;
+        state.messageType = "error";
       }
     };
 
     const editUser = (id?: number) => {
       if (id === undefined) return;
+      // Cancel any other edits in progress
+      state.users.forEach(user => {
+        if (user.isEditing && user.id !== id) {
+          cancelEdit(user.id);
+        }
+      });
+      
       state.users = state.users.map((user) =>
-        user.id === id ? { ...user, isEditing: true } : user
+        user.id === id ? { ...user, isEditing: true, originalData: { ...user } } : user
       );
     };
 
@@ -352,52 +488,96 @@ export default {
       if (id === undefined) return;
       const user = state.users.find((u) => u.id === id);
       if (!user) return;
+      state.isLoading = true;
       try {
         const response = await fetch(`/api/users/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            first_name: user.first_name,
-            last_name: user.last_name,
+            first_name: user.first_name.trim(),
+            last_name: user.last_name.trim(),
             date_of_birth: user.date_of_birth,
-            mobile_number: user.mobile_number,
-            address: user.address,
+            mobile_number: user.mobile_number.trim(),
+            address: user.address.trim(),
           }),
         });
-        if (!response.ok) throw new Error("Failed to update user");
+        const responseData = await response.json();
+        if (!response.ok) {
+          state.message = responseData.message || "Failed to update user";
+          state.messageType = "error";
+          if (responseData.errors) {
+            responseData.errors.forEach((err: any) => {
+              state.errors[err.param] = err.msg;
+            });
+          }
+          state.isLoading = false;
+          return;
+        }
+        state.message = responseData.message || "User updated successfully";
+        state.messageType = "success";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
         await fetchUsers();
       } catch (error) {
-        console.error("Error updating user:", error);
+        state.message = `Error updating user: ${(error as Error).message}`;
+        state.messageType = "error";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+      } finally {
+        state.isLoading = false;
       }
     };
 
     const deleteUser = async (id?: number) => {
       if (id === undefined) return;
+      if (!confirm("Are you sure you want to delete this user?")) {
+        return;
+      }
+      state.isLoading = true;
       try {
-        const response = await fetch(`/api/users/${id}`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Failed to delete user");
+        const response = await fetch(`/api/users/${id}`, {
+          method: "DELETE",
+        });
+        const responseData = await response.json();
+        if (!response.ok) {
+          state.message = responseData.message || "Failed to delete user";
+          state.messageType = "error";
+          state.isLoading = false;
+          return;
+        }
+        state.message = responseData.message || "User deleted successfully";
+        state.messageType = "success";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
         await fetchUsers();
       } catch (error) {
-        console.error("Error deleting user:", error);
+        state.message = `Error deleting user: ${(error as Error).message}`;
+        state.messageType = "error";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+      } finally {
+        state.isLoading = false;
       }
     };
 
-    const currentPage = computed({
-      get: () => state.currentPage,
-      set: (value: number) => {
-        state.currentPage = value;
-        fetchUsers();
-      },
-    });
-
-    const hasErrors = computed(() =>
-      Object.values(state.errors).some((e) => e)
-    );
-
-    const canceleEdit = () => {
-      state.users = state.users.map((user) =>
-        user.isEditing ? { ...user, isEditing: false } : user
-      );
+    const cancelEdit = (id?: number) => {
+      if (id === undefined) return;
+      const user = state.users.find(u => u.id === id);
+      if(!user) return;
+      if (user && user.originalData) {
+        // Restore original data
+        Object.assign(user, user.originalData);
+        delete user.originalData;
+      }
+      user.isEditing = false;
     };
 
     fetchUsers();
@@ -406,15 +586,17 @@ export default {
       state,
       validateForm,
       formatDate,
-      paginatedUsers,
-      totalPages,
       addUser,
       editUser,
       updateUser,
       deleteUser,
-      currentPage,
-      hasErrors,
-      canceleEdit,
+      incrementPage,
+      decrementPage,
+      cancelEdit,
+      goToPage,
+      handleSearch,
+      handleSortChange,
+      fetchUsers
     };
   },
 };
