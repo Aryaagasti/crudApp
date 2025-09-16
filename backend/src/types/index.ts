@@ -9,10 +9,10 @@ export interface User {
 
 export interface UserQueryParams {
   search: string;
-  page: number;
   limit: number;
   sortBy: string;
   order: string;
+  page?:number;
 }
 
 export interface ValidationError {

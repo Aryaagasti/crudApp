@@ -12,30 +12,38 @@ class UserModel {
     return result.rows[0];
   }
 
-   static async findAll(params: UserQueryParams & { offset: number }): Promise<User[]> {
-    const { search, limit, offset, sortBy, order } = params;
-    
-    let query = 'SELECT * FROM users';
-    const values: any[] = [];
-    
-    if (search) {
-      query += ' WHERE first_name ILIKE $1 OR last_name ILIKE $1';
-      values.push(`%${search}%`);
-    }
-
-    query += ` ORDER BY ${sortBy} ${order}`;
-    
-    if (search) {
-      query += ' LIMIT $2 OFFSET $3';
-      values.push(limit, offset);
-    } else {
-      query += ' LIMIT $1 OFFSET $2';
-      values.push(limit, offset);
-    }
-
-    const result = await pool.query(query, values);
-    return result.rows;
+   // In UserModel.ts
+static async findAll(params: UserQueryParams & { offset: number }): Promise<User[]> {
+  const { search, limit, offset, sortBy, order } = params;
+  
+  let query = 'SELECT * FROM users';
+  const values: any[] = [];
+  
+  if (search) {
+    query += ' WHERE first_name ILIKE $1 OR last_name ILIKE $1';
+    values.push(`%${search}%`);
   }
+
+  // Validate sortBy and order to prevent SQL injection
+  const validSortColumns = ['id', 'first_name', 'last_name', 'date_of_birth', 'mobile_number', 'address'];
+  const validOrder = ['ASC', 'DESC'];
+  
+  const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'id';
+  const safeOrder = validOrder.includes(order.toUpperCase()) ? order.toUpperCase() : 'ASC';
+  
+  query += ` ORDER BY ${safeSortBy} ${safeOrder}`;
+  
+  if (search) {
+    query += ' LIMIT $2 OFFSET $3';
+    values.push(limit, offset);
+  } else {
+    query += ' LIMIT $1 OFFSET $2';
+    values.push(limit, offset);
+  }
+
+  const result = await pool.query(query, values);
+  return result.rows;
+}
 
   static async findAllBasic(): Promise<User[]> {
     const result = await pool.query('SELECT * FROM users ORDER BY id ASC')
@@ -82,6 +90,18 @@ class UserModel {
     }
     return result.rows[0];
   }
+
+  static async count(search: string = ""): Promise<number> {
+  let query = "SELECT COUNT(*) FROM users";
+  const values: any[] = [];
+  if (search) {
+    query += " WHERE first_name ILIKE $1 OR last_name ILIKE $1";
+    values.push(`%${search}%`);
+  }
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].count, 10);
+}
+
 }
 
 export default UserModel;
