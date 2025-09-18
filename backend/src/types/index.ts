@@ -21,3 +21,11 @@ export interface ValidationError {
   value: any;
   location: string;
 }
+
+export interface Admin {
+  id: number;
+  username: string;
+  email:string;
+  password:string;
+  created_at?: string;
+}
