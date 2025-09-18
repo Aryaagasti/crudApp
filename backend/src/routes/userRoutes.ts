@@ -2,12 +2,12 @@ import express from "express";
 import { body } from "express-validator";
 import { getAllUsers, getUserById, createUser, updateUser, deleteUser } from "../controllers/userController";
 import authMiddleware from "../middleware/authMiddleware"
-import { login } from "../controllers/authController";
+
 
 const router = express.Router();
 
 // AUTH ROUTE
-router.post("/auth/login",[body("username").notEmpty().withMessage("Username is required"), body("password").notEmpty().withMessage("Password is required")], login);
+
 router.get('/users', authMiddleware ,getAllUsers);
 router.get('/users/:id', authMiddleware ,getUserById);
 router.post(

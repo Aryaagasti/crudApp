@@ -104,7 +104,7 @@ export default {
       }
       state.isLoading = true;
       try {
-        const response = await axios.post("/api/auth/login", {
+        const response = await axios.post("/api/admin/auth/login", {
           username: state.form.username.trim(),
           password: state.form.password.trim(),
         });
