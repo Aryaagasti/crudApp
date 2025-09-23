@@ -1,25 +1,40 @@
-import {createRouter, createWebHistory}  from 'vue-router'
-import Home from '../views/Home.vue'
-import Login from '../views/Login.vue'
 
-const routes = [{path: '/', redirect:'/login'},
-    {path: '/login', component: Login},
-    {path: '/home', component: Home, meta: {requiresAuth: true}},
-]
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from '../views/Home.vue';
+import Login from '../views/Login.vue';
+import axios from 'axios';
+
+const routes = [
+  { path: '/', redirect: '/login' },
+  { path: '/login', component: Login },
+  { path: '/home', component: Home, meta: { requiresAuth: true } },
+];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
-})
+  history: createWebHistory(),
+  routes,
+});
 
-router.beforeEach((to, from,next)=>{
-    const token = localStorage.getItem('token')
-    if(to.meta.requiresAuth && !token){
-        next('/login')
+router.beforeEach(async (to, from, next) => {
+  const checkAuth = async () => {
+    try {
+      const response = await axios.get('/api/admin/auth/check', { withCredentials: true });
+      return response.data.isAuthenticated;
+    } catch (error) {
+      return false;
     }
-    else{
-        next()
-    }
-})
+  };
 
-export default router
+  if (to.meta.requiresAuth) {
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) {
+      next('/login'); 
+    } else {
+      next(); 
+    }
+  } else {
+    next(); 
+  }
+});
+
+export default router;

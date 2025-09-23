@@ -1,8 +1,13 @@
-<!-- src/views/Home.vue -->
+
 <template>
   <div class="container mx-auto p-4">
-    <!-- Logout Button -->
-    <div class="flex justify-end mb-4">
+    <!-- Navbar -->
+    <div class="flex justify-between items-center mb-4 bg-green-600 text-white p-4 rounded">
+      <div>
+        <span class="text-lg font-semibold">
+          Welcome, {{ adminUsername || 'Guest' }}
+        </span>
+      </div>
       <button
         @click="logout"
         class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
@@ -241,7 +246,7 @@
 </template>
 
 <script lang="ts">
-import { reactive } from "vue";
+import { reactive, computed } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 
@@ -301,6 +306,12 @@ export default {
       formSubmitted: false,
       totalPages: 1,
       searchTimeout: null,
+    });
+
+    // Get admin username from localStorage
+    const adminUsername = computed(() => {
+      const adminData = localStorage.getItem("admin");
+      return adminData ? JSON.parse(adminData).username : null;
     });
 
     const validateForm = () => {
@@ -374,8 +385,7 @@ export default {
             date_of_birth: state.form.dateOfBirth,
             mobile_number: state.form.mobileNumber.trim(),
             address: state.form.address.trim(),
-          },
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+          }
         );
         state.form = {
           firstName: "",
@@ -397,7 +407,6 @@ export default {
         state.message = error.response?.data?.message || "Error adding user";
         state.messageType = "error";
         if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("token");
           localStorage.removeItem("admin");
           router.push("/login");
         }
@@ -413,8 +422,7 @@ export default {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(
-          `/api/users?page=${state.currentPage}&limit=5&search=${encodeURIComponent(state.search)}&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`,
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+          `/api/users?page=${state.currentPage}&limit=5&search=${encodeURIComponent(state.search)}&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`
         );
         state.users = response.data.data || [];
         state.totalPages = response.data.pagination?.totalPages || 1;
@@ -422,7 +430,6 @@ export default {
         state.message = error.response?.data?.message || "Error fetching users";
         state.messageType = "error";
         if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("token");
           localStorage.removeItem("admin");
           router.push("/login");
         }
@@ -455,8 +462,7 @@ export default {
             date_of_birth: user.date_of_birth,
             mobile_number: user.mobile_number.trim(),
             address: user.address.trim(),
-          },
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+          }
         );
         state.message = response.data.message || "User updated successfully";
         state.messageType = "success";
@@ -469,7 +475,6 @@ export default {
         state.message = error.response?.data?.message || "Error updating user";
         state.messageType = "error";
         if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("token");
           localStorage.removeItem("admin");
           router.push("/login");
         }
@@ -489,9 +494,7 @@ export default {
       }
       state.isLoading = true;
       try {
-        const response = await axios.delete(`/api/users/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
+        const response = await axios.delete(`/api/users/${id}`);
         state.message = response.data.message || "User deleted successfully";
         state.messageType = "success";
         setTimeout(() => {
@@ -503,7 +506,6 @@ export default {
         state.message = error.response?.data?.message || "Error deleting user";
         state.messageType = "error";
         if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem("token");
           localStorage.removeItem("admin");
           router.push("/login");
         }
@@ -528,7 +530,6 @@ export default {
     };
 
     const logout = () => {
-      localStorage.removeItem("token");
       localStorage.removeItem("admin");
       router.push("/login");
     };
@@ -537,6 +538,7 @@ export default {
 
     return {
       state,
+      adminUsername,
       validateForm,
       formatDate,
       addUser,

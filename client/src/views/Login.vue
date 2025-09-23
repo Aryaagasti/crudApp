@@ -1,4 +1,4 @@
-<!-- src/views/Login.vue -->
+```vue
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
@@ -108,16 +108,17 @@ export default {
           username: state.form.username.trim(),
           password: state.form.password.trim(),
         });
-        const { token, admin } = response.data.data;
-        localStorage.setItem("token", token);
-        localStorage.setItem("admin", JSON.stringify(admin));
+        localStorage.setItem("admin", JSON.stringify(response.data.data));
         state.message = "Login successful";
         state.messageType = "success";
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
-          router.push("/home");
-        }, 1000);
+          state.form.username = "";
+          state.form.password = "";
+          state.formSubmitted = false;
+          router.push("/home"); 
+        }, 1000); 
       } catch (error: any) {
         state.message = error.response?.data?.message || "Login failed";
         state.messageType = "error";
@@ -138,3 +139,4 @@ export default {
   },
 };
 </script>
+```
