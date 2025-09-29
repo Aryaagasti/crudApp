@@ -1,10 +1,15 @@
-import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
-import User from '../models/User';
-import { ValidationError } from 'express-validator';
+// controllers/userController.ts
+import { Request, Response } from "express";
+import { validationResult } from "express-validator";
+import User from "../models/User";
+import { ValidationError } from "express-validator";
+
+interface AuthRequest extends Request {
+  admin?: { id: number; username: string };
+}
 
 // GET ALL USERS with pagination
-const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { page = "1", limit = "5", search = "", sortBy = "id", order = "ASC" } = req.query;
 
@@ -20,7 +25,6 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
       order: order as string,
     });
 
-    // total count for pagination
     const totalResult = await User.count(search as string);
     const totalPages = Math.ceil(totalResult / perPage);
 
@@ -45,17 +49,17 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
 };
 
 // GET SPECIFIC USER BY ID
-const getUserById = async (req: Request, res: Response): Promise<void> => {
+const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await User.findById(parseInt(req.params.id));
     res.status(200).json({
-      status: 'success',
-      message: 'User retrieved successfully',
+      status: "success",
+      message: "User retrieved successfully",
       data: user,
     });
   } catch (error) {
     res.status(404).json({
-      status: 'error',
+      status: "error",
       message: `User not found: ${(error as Error).message}`,
       data: null,
     });
@@ -63,12 +67,12 @@ const getUserById = async (req: Request, res: Response): Promise<void> => {
 };
 
 // CREATE USER
-const createUser = async (req: Request, res: Response): Promise<void> => {
+const createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
-      status: 'error',
-      message: 'Validation failed',
+      status: "error",
+      message: "Validation failed",
       errors: errors.array() as ValidationError[],
       data: null,
     });
@@ -78,13 +82,13 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await User.create(req.body);
     res.status(201).json({
-      status: 'success',
-      message: 'User created successfully',
+      status: "success",
+      message: "User created successfully",
       data: user,
     });
   } catch (error) {
     res.status(500).json({
-      status: 'error',
+      status: "error",
       message: `Failed to create user: ${(error as Error).message}`,
       data: null,
     });
@@ -92,12 +96,12 @@ const createUser = async (req: Request, res: Response): Promise<void> => {
 };
 
 // UPDATE AN EXISTING USER BY ID
-const updateUser = async (req: Request, res: Response): Promise<void> => {
+const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
-      status: 'error',
-      message: 'Validation failed',
+      status: "error",
+      message: "Validation failed",
       errors: errors.array() as ValidationError[],
       data: null,
     });
@@ -107,20 +111,20 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await User.update(parseInt(req.params.id), req.body);
     res.status(200).json({
-      status: 'success',
-      message: 'User updated successfully',
+      status: "success",
+      message: "User updated successfully",
       data: user,
     });
   } catch (error) {
-    if ((error as Error).message === 'User not found') {
+    if ((error as Error).message === "User not found") {
       res.status(404).json({
-        status: 'error',
-        message: 'User not found',
+        status: "error",
+        message: "User not found",
         data: null,
       });
     } else {
       res.status(400).json({
-        status: 'error',
+        status: "error",
         message: `Failed to update user: ${(error as Error).message}`,
         data: null,
       });
@@ -129,12 +133,12 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
 };
 
 // DELETE THE USER BY ID
-const deleteUser = async (req: Request, res: Response): Promise<void> => {
+const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
-      status: 'error',
-      message: 'Validation failed',
+      status: "error",
+      message: "Validation failed",
       errors: errors.array() as ValidationError[],
       data: null,
     });
@@ -144,20 +148,20 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     await User.delete(parseInt(req.params.id));
     res.status(200).json({
-      status: 'success',
-      message: 'User deleted successfully',
+      status: "success",
+      message: "User deleted successfully",
       data: null,
     });
   } catch (error) {
-    if ((error as Error).message === 'User not found') {
+    if ((error as Error).message === "User not found") {
       res.status(404).json({
-        status: 'error',
-        message: 'User not found',
+        status: "error",
+        message: "User not found",
         data: null,
       });
     } else {
       res.status(500).json({
-        status: 'error',
+        status: "error",
         message: `Failed to delete user: ${(error as Error).message}`,
         data: null,
       });
@@ -165,10 +169,4 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-};
+export { getAllUsers, getUserById, createUser, updateUser, deleteUser };

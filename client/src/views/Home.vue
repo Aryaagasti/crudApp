@@ -1,15 +1,25 @@
+
 <template>
   <div class="container mx-auto p-4">
+    <!-- Navbar -->
+    <div class="flex justify-between items-center mb-4 bg-green-600 text-white p-4 rounded">
+      <div>
+        <span class="text-lg font-semibold">
+          Welcome, {{ adminUsername || 'Guest' }}
+        </span>
+      </div>
+      <button
+        @click="logout"
+        class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+      >
+        Logout
+      </button>
+    </div>
     <!-- Add User Form -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">Add New User</h2>
-    <!-- Success/Error Message -->
     <div
       v-if="state.message"
-      :class="
-        state.messageType === 'success'
-          ? 'bg-green-100 text-green-700'
-          : 'bg-red-100 text-red-700'
-      "
+      :class="state.messageType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
       class="p-4 mb-4 rounded"
     >
       {{ state.message }}
@@ -18,91 +28,66 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Name -->
         <div>
-          <label for="firstName" class="block mb-1 text-gray-700 font-medium"
-            >First Name</label
-          >
+          <label for="firstName" class="block mb-1 text-gray-700 font-medium">First Name</label>
           <input
             id="firstName"
             v-model="state.form.firstName"
             class="p-2 border rounded w-full"
             placeholder="Enter First Name"
           />
-          <p
-            v-if="state.formSubmitted && state.errors.first_name"
-            class="text-red-500 text-sm mt-1"
-          >
+          <p v-if="state.formSubmitted && state.errors.first_name" class="text-red-500 text-sm mt-1">
             {{ state.errors.first_name }}
           </p>
         </div>
         <!-- Last Name -->
         <div>
-          <label for="lastName" class="block mb-1 text-gray-700 font-medium"
-            >Last Name</label
-          >
+          <label for="lastName" class="block mb-1 text-gray-700 font-medium">Last Name</label>
           <input
             id="lastName"
             v-model="state.form.lastName"
             class="p-2 border rounded w-full"
             placeholder="Enter Last Name"
           />
-          <p
-            v-if="state.formSubmitted && state.errors.last_name"
-            class="text-red-500 text-sm mt-1"
-          >
+          <p v-if="state.formSubmitted && state.errors.last_name" class="text-red-500 text-sm mt-1">
             {{ state.errors.last_name }}
           </p>
         </div>
         <!-- DOB -->
         <div>
-          <label for="dob" class="block mb-1 text-gray-700 font-medium"
-            >Date of Birth</label
-          >
+          <label for="dob" class="block mb-1 text-gray-700 font-medium">Date of Birth</label>
           <input
             id="dob"
             type="date"
             v-model="state.form.dateOfBirth"
             class="p-2 border rounded w-full"
           />
-          <p
-            v-if="state.formSubmitted && state.errors.date_of_birth"
-            class="text-red-500 text-sm mt-1"
-          >
+          <p v-if="state.formSubmitted && state.errors.date_of_birth" class="text-red-500 text-sm mt-1">
             {{ state.errors.date_of_birth }}
           </p>
         </div>
         <!-- Mobile -->
         <div>
-          <label for="mobile" class="block mb-1 text-gray-700 font-medium"
-            >Mobile Number</label
-          >
+          <label for="mobile" class="block mb-1 text-gray-700 font-medium">Mobile Number</label>
           <input
             id="mobile"
             v-model="state.form.mobileNumber"
             class="p-2 border rounded w-full"
             placeholder="Enter Mobile Number"
           />
-          <p
-            v-if="state.formSubmitted && state.errors.mobile_number"
-            class="text-red-500 text-sm mt-1"
-          >
+          <p v-if="state.formSubmitted && state.errors.mobile_number" class="text-red-500 text-sm mt-1">
             {{ state.errors.mobile_number }}
           </p>
         </div>
         <!-- Address -->
         <div class="md:col-span-2">
-          <label for="address" class="block mb-1 text-gray-700 font-medium"
-            >Address</label
-          >
+          <label for="address" class="block mb-1 text-gray-700 font-medium">Address</label>
           <textarea
             id="address"
             v-model="state.form.address"
             class="p-2 border rounded w-full h-24"
             placeholder="Enter Address"
           ></textarea>
-          <p
-            v-if="state.formSubmitted && state.errors.address"
-            class="text-red-500 text-sm mt-1"
-          >
+          <p v-if="state.formSubmitted && state.errors.address" class="text-red-500 text-sm mt-1">
             {{ state.errors.address }}
           </p>
         </div>
@@ -121,14 +106,14 @@
     <!-- User List -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">User List</h2>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg">
-      <div class="flex mb-4 p-4">
+      <div class="flex mb-4 p-4 space-x-2">
         <input
           v-model="state.search"
           placeholder="Search by Name"
-          class="p-2 border rounded w-full mr-2"
+          class="p-2 border rounded w-full"
           @input="handleSearch"
         />
-        <select v-model="state.sortColumn" class="p-2 border rounded mr-2" @change="handleSortChange">
+        <select v-model="state.sortColumn" class="p-2 border rounded" @change="handleSortChange">
           <option value="">Sort by</option>
           <option value="first_name">First Name</option>
           <option value="last_name">Last Name</option>
@@ -216,9 +201,9 @@
                   Delete
                 </button>
                 <button
+                  v-if="user.isEditing"
                   @click="cancelEdit(user.id)"
                   class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
-                  v-if="user.isEditing"
                 >
                   Cancel
                 </button>
@@ -235,8 +220,6 @@
         >
           Previous
         </button>
-
-        <!-- Page numbers -->
         <button
           v-for="page in state.totalPages"
           :key="page"
@@ -250,7 +233,6 @@
         >
           {{ page }}
         </button>
-
         <button
           @click="incrementPage"
           :disabled="state.currentPage === state.totalPages"
@@ -265,6 +247,8 @@
 
 <script lang="ts">
 import { reactive, computed } from "vue";
+import axios from "axios";
+import { useRouter } from "vue-router";
 
 interface User {
   id?: number;
@@ -287,6 +271,7 @@ interface FormState {
 
 export default {
   setup() {
+    const router = useRouter();
     const state = reactive<{
       users: User[];
       form: FormState;
@@ -323,27 +308,23 @@ export default {
       searchTimeout: null,
     });
 
+    // Get admin username from localStorage
+    const adminUsername = computed(() => {
+      const adminData = localStorage.getItem("admin");
+      return adminData ? JSON.parse(adminData).username : null;
+    });
+
     const validateForm = () => {
       state.errors = {};
-      state.errors.first_name = !state.form.firstName.trim()
-        ? "First name is required"
+      state.errors.first_name = !state.form.firstName.trim() ? "First name is required" : "";
+      state.errors.last_name = !state.form.lastName.trim() ? "Last name is required" : "";
+      state.errors.date_of_birth = !state.form.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(state.form.dateOfBirth)
+        ? "Valid date (YYYY-MM-DD) required"
         : "";
-      state.errors.last_name = !state.form.lastName.trim()
-        ? "Last name is required"
-        : "";
-      state.errors.date_of_birth =
-        !state.form.dateOfBirth ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(state.form.dateOfBirth)
-          ? "Valid date (YYYY-MM-DD) required"
-          : "";
-      state.errors.mobile_number = !/^\d{10}$/.test(
-        state.form.mobileNumber.trim()
-      )
+      state.errors.mobile_number = !/^\d{10}$/.test(state.form.mobileNumber.trim())
         ? "10 digits required"
         : "";
-      state.errors.address = !state.form.address.trim()
-        ? "Address is required"
-        : "";
+      state.errors.address = !state.form.address.trim() ? "Address is required" : "";
       return Object.values(state.errors).every((e) => !e);
     };
 
@@ -352,7 +333,6 @@ export default {
     };
 
     const handleSearch = () => {
-      // Debounce search to avoid too many API calls
       clearTimeout(state.searchTimeout);
       state.searchTimeout = setTimeout(() => {
         state.currentPage = 1;
@@ -397,30 +377,16 @@ export default {
       }
       state.isLoading = true;
       try {
-        const response = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const response = await axios.post(
+          "/api/users",
+          {
             first_name: state.form.firstName.trim(),
             last_name: state.form.lastName.trim(),
             date_of_birth: state.form.dateOfBirth,
             mobile_number: state.form.mobileNumber.trim(),
             address: state.form.address.trim(),
-          }),
-        });
-        const responseData = await response.json();
-        if (!response.ok) {
-          state.errors = {};
-          state.message = responseData.message || "Failed to add user";
-          state.messageType = "error";
-          if (responseData.errors) {
-            responseData.errors.forEach((err: any) => {
-              state.errors[err.param] = err.msg;
-            });
           }
-          state.isLoading = false;
-          return;
-        }
+        );
         state.form = {
           firstName: "",
           lastName: "",
@@ -430,16 +396,20 @@ export default {
         };
         state.errors = {};
         state.formSubmitted = false;
-        state.message = responseData.message || "User created successfully";
+        state.message = response.data.message || "User created successfully";
         state.messageType = "success";
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
         await fetchUsers();
-      } catch (error) {
-        state.message = `Error adding user: ${(error as Error).message}`;
+      } catch (error: any) {
+        state.message = error.response?.data?.message || "Error adding user";
         state.messageType = "error";
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("admin");
+          router.push("/login");
+        }
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -451,34 +421,28 @@ export default {
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch(
-          `/api/users?page=${state.currentPage}&limit=5&search=${
-            state.search
-          }&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`
+        const response = await axios.get(
+          `/api/users?page=${state.currentPage}&limit=5&search=${encodeURIComponent(state.search)}&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`
         );
-        const responseData = await response.json();
-        if (!response.ok) {
-          state.message = responseData.message || "Failed to fetch users";
-          state.messageType = "error";
-          return;
-        }
-        state.users = responseData.data || [];
-        state.totalPages = responseData.pagination?.totalPages || 1;
-      } catch (error) {
-        state.message = `Error fetching users: ${(error as Error).message}`;
+        state.users = response.data.data || [];
+        state.totalPages = response.data.pagination?.totalPages || 1;
+      } catch (error: any) {
+        state.message = error.response?.data?.message || "Error fetching users";
         state.messageType = "error";
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("admin");
+          router.push("/login");
+        }
       }
     };
 
     const editUser = (id?: number) => {
       if (id === undefined) return;
-      // Cancel any other edits in progress
       state.users.forEach(user => {
         if (user.isEditing && user.id !== id) {
           cancelEdit(user.id);
         }
       });
-      
       state.users = state.users.map((user) =>
         user.id === id ? { ...user, isEditing: true, originalData: { ...user } } : user
       );
@@ -490,39 +454,30 @@ export default {
       if (!user) return;
       state.isLoading = true;
       try {
-        const response = await fetch(`/api/users/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const response = await axios.put(
+          `/api/users/${id}`,
+          {
             first_name: user.first_name.trim(),
             last_name: user.last_name.trim(),
             date_of_birth: user.date_of_birth,
             mobile_number: user.mobile_number.trim(),
             address: user.address.trim(),
-          }),
-        });
-        const responseData = await response.json();
-        if (!response.ok) {
-          state.message = responseData.message || "Failed to update user";
-          state.messageType = "error";
-          if (responseData.errors) {
-            responseData.errors.forEach((err: any) => {
-              state.errors[err.param] = err.msg;
-            });
           }
-          state.isLoading = false;
-          return;
-        }
-        state.message = responseData.message || "User updated successfully";
+        );
+        state.message = response.data.message || "User updated successfully";
         state.messageType = "success";
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
         await fetchUsers();
-      } catch (error) {
-        state.message = `Error updating user: ${(error as Error).message}`;
+      } catch (error: any) {
+        state.message = error.response?.data?.message || "Error updating user";
         state.messageType = "error";
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("admin");
+          router.push("/login");
+        }
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -539,26 +494,21 @@ export default {
       }
       state.isLoading = true;
       try {
-        const response = await fetch(`/api/users/${id}`, {
-          method: "DELETE",
-        });
-        const responseData = await response.json();
-        if (!response.ok) {
-          state.message = responseData.message || "Failed to delete user";
-          state.messageType = "error";
-          state.isLoading = false;
-          return;
-        }
-        state.message = responseData.message || "User deleted successfully";
+        const response = await axios.delete(`/api/users/${id}`);
+        state.message = response.data.message || "User deleted successfully";
         state.messageType = "success";
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
         await fetchUsers();
-      } catch (error) {
-        state.message = `Error deleting user: ${(error as Error).message}`;
+      } catch (error: any) {
+        state.message = error.response?.data?.message || "Error deleting user";
         state.messageType = "error";
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem("admin");
+          router.push("/login");
+        }
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -570,20 +520,25 @@ export default {
 
     const cancelEdit = (id?: number) => {
       if (id === undefined) return;
-      const user = state.users.find(u => u.id === id);
-      if(!user) return;
-      if (user && user.originalData) {
-        // Restore original data
+      const user = state.users.find((u) => u.id === id);
+      if (!user) return;
+      if (user.originalData) {
         Object.assign(user, user.originalData);
         delete user.originalData;
       }
       user.isEditing = false;
     };
 
+    const logout = () => {
+      localStorage.removeItem("admin");
+      router.push("/login");
+    };
+
     fetchUsers();
 
     return {
       state,
+      adminUsername,
       validateForm,
       formatDate,
       addUser,
@@ -596,7 +551,8 @@ export default {
       goToPage,
       handleSearch,
       handleSortChange,
-      fetchUsers
+      fetchUsers,
+      logout,
     };
   },
 };
