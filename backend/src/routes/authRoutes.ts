@@ -10,6 +10,7 @@ router.post("/auth/login",[body("username").notEmpty().withMessage("Username is 
 //auth check route
 router.get("/auth/check", checkAuth);
 
+// Admin logout route
 router.post("/auth/logout", logout);
 
 export default router;
