@@ -1,67 +1,83 @@
-
 import pool from "../config/db";
 import { User, UserQueryParams } from "../types";
 
+/**
+ * UserModel - Handles all database operations for Users
+ */
 class UserModel {
+  
+  /**
+   * Create new user
+   */
   static async create(user: Omit<User, 'id'>): Promise<User> {
     const { first_name, last_name, date_of_birth, mobile_number, address } = user;
-    const result =  await pool.query(
+    const result = await pool.query(
       'INSERT INTO users (first_name, last_name, date_of_birth, mobile_number, address) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [first_name, last_name, date_of_birth, mobile_number, address]
     );
     return result.rows[0];
   }
 
-   // In UserModel.ts
-static async findAll(params: UserQueryParams & { offset: number }): Promise<User[]> {
-  const { search, limit, offset, sortBy, order } = params;
-  
-  let query = 'SELECT * FROM users';
-  const values: any[] = [];
-  
-  if (search) {
-    query += ' WHERE first_name ILIKE $1 OR last_name ILIKE $1';
-    values.push(`%${search}%`);
+  /**
+   * Find all users with pagination, search, and sorting
+   */
+  static async findAll(params: UserQueryParams & { offset: number }): Promise<User[]> {
+    const { search, limit, offset, sortBy, order } = params;
+    
+    let query = 'SELECT * FROM users';
+    const values: any[] = [];
+    
+    // Add search filter if provided
+    if (search) {
+      query += ' WHERE first_name ILIKE $1 OR last_name ILIKE $1';
+      values.push(`%${search}%`);
+    }
+
+    // Prevent SQL injection for sort parameters
+    const validSortColumns = ['id', 'first_name', 'last_name', 'date_of_birth', 'mobile_number', 'address'];
+    const validOrder = ['ASC', 'DESC'];
+    
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'id';
+    const safeOrder = validOrder.includes(order.toUpperCase()) ? order.toUpperCase() : 'ASC';
+    
+    query += ` ORDER BY ${safeSortBy} ${safeOrder}`;
+    
+    // Add pagination
+    if (search) {
+      query += ' LIMIT $2 OFFSET $3';
+      values.push(limit, offset);
+    } else {
+      query += ' LIMIT $1 OFFSET $2';
+      values.push(limit, offset);
+    }
+
+    const result = await pool.query(query, values);
+    return result.rows;
   }
 
-  // Validate sortBy and order to prevent SQL injection
-  const validSortColumns = ['id', 'first_name', 'last_name', 'date_of_birth', 'mobile_number', 'address'];
-  const validOrder = ['ASC', 'DESC'];
-  
-  const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'id';
-  const safeOrder = validOrder.includes(order.toUpperCase()) ? order.toUpperCase() : 'ASC';
-  
-  query += ` ORDER BY ${safeSortBy} ${safeOrder}`;
-  
-  if (search) {
-    query += ' LIMIT $2 OFFSET $3';
-    values.push(limit, offset);
-  } else {
-    query += ' LIMIT $1 OFFSET $2';
-    values.push(limit, offset);
-  }
-
-  const result = await pool.query(query, values);
-  return result.rows;
-}
-
+  /**
+   * Get all users without pagination (basic list)
+   */
   static async findAllBasic(): Promise<User[]> {
     const result = await pool.query('SELECT * FROM users ORDER BY id ASC')
     return result.rows;
   }
 
+  /**
+   * Find user by ID
+   */
   static async findById(id: number): Promise<User> {
-    const result = await pool.query(`
-      SELECT 
+    const result = await pool.query(
+      `SELECT 
         id,
         first_name,
         last_name,
         TO_CHAR(date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
         mobile_number,
         address
-      FROM users
-      WHERE id = $1
-    `, [id]);
+      FROM users WHERE id = $1`,
+      [id]
+    );
     
     if (result.rows.length === 0) {
       throw new Error('User not found');
@@ -69,6 +85,9 @@ static async findAll(params: UserQueryParams & { offset: number }): Promise<User
     return result.rows[0];
   }
 
+  /**
+   * Update user by ID
+   */
   static async update(id: number, user: Omit<User, 'id'>): Promise<User> {
     const { first_name, last_name, date_of_birth, mobile_number, address } = user;
     const result = await pool.query(
@@ -82,6 +101,9 @@ static async findAll(params: UserQueryParams & { offset: number }): Promise<User
     return result.rows[0];
   }
 
+  /**
+   * Delete user by ID
+   */
   static async delete(id: number): Promise<User> {
     const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
     
@@ -91,17 +113,21 @@ static async findAll(params: UserQueryParams & { offset: number }): Promise<User
     return result.rows[0];
   }
 
+  /**
+   * Count total users (with optional search)
+   */
   static async count(search: string = ""): Promise<number> {
-  let query = "SELECT COUNT(*) FROM users";
-  const values: any[] = [];
-  if (search) {
-    query += " WHERE first_name ILIKE $1 OR last_name ILIKE $1";
-    values.push(`%${search}%`);
+    let query = "SELECT COUNT(*) FROM users";
+    const values: any[] = [];
+    
+    if (search) {
+      query += " WHERE first_name ILIKE $1 OR last_name ILIKE $1";
+      values.push(`%${search}%`);
+    }
+    
+    const result = await pool.query(query, values);
+    return parseInt(result.rows[0].count, 10);
   }
-  const result = await pool.query(query, values);
-  return parseInt(result.rows[0].count, 10);
-}
-
 }
 
 export default UserModel;

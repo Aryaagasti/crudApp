@@ -5,10 +5,10 @@ import User from "../models/User";
 import { ValidationError } from "express-validator";
 
 interface AuthRequest extends Request {
-  admin?: { id: number; username: string };
+  admin?: { id: number; username: string; role?: string };
 }
 
-// GET ALL USERS with pagination
+// Get all users with pagination and search
 const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { page = "1", limit = "5", search = "", sortBy = "id", order = "ASC" } = req.query;
@@ -48,10 +48,11 @@ const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
-// GET SPECIFIC USER BY ID
+// Get single user by ID
 const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await User.findById(parseInt(req.params.id));
+    
     res.status(200).json({
       status: "success",
       message: "User retrieved successfully",
@@ -66,7 +67,7 @@ const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
-// CREATE USER
+// Create new user (admin+ only)
 const createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -79,8 +80,18 @@ const createUser = async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
 
+  // Check permissions
+  if(req.admin?.role !== 'super_admin' && req.admin?.role !== 'admin'){
+    res.status(403).json({
+      status: "error",  
+      message: "Forbidden: You don't have permission to create users",
+    });
+    return; 
+  }
+
   try {
     const user = await User.create(req.body);
+    
     res.status(201).json({
       status: "success",
       message: "User created successfully",
@@ -95,7 +106,7 @@ const createUser = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
-// UPDATE AN EXISTING USER BY ID
+// Update user (admin+ only)
 const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -108,8 +119,18 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
 
+  // Check permissions
+  if(req.admin?.role !== 'super_admin' && req.admin?.role !== 'admin'){
+    res.status(403).json({
+      status: "error",  
+      message: "Forbidden: You don't have permission to update users",
+    });
+    return; 
+  }
+
   try {
     const user = await User.update(parseInt(req.params.id), req.body);
+    
     res.status(200).json({
       status: "success",
       message: "User updated successfully",
@@ -132,7 +153,7 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
-// DELETE THE USER BY ID
+// Delete user (super_admin only)
 const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -145,8 +166,18 @@ const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
 
+  // Only super_admin can delete
+  if(req.admin?.role !== 'super_admin'){
+    res.status(403).json({
+      status: "error",
+      message: "Forbidden: You don't have permission to delete users",
+    });
+    return; 
+  }
+
   try {
     await User.delete(parseInt(req.params.id));
+    
     res.status(200).json({
       status: "success",
       message: "User deleted successfully",

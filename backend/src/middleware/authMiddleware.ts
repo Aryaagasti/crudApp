@@ -1,26 +1,55 @@
-
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { decryptData } from "../utils/encryption";
+import { AuthPayload } from "../types/index";
 
+// Add admin property to Request object
 interface AuthRequest extends Request {
-  admin?: { id: number; username: string };
+  admin?: AuthPayload;
 }
 
+/**
+ * Auth Middleware - Protects routes by verifying JWT tokens
+ */
 const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.cookies.jwt; // Cookie se token lo
+  // Get token from cookie
+  const token = req.cookies.jwt;
+  
+  // Check if token exists
   if (!token) {
-    return res.status(401).json({ status: "error", message: "No token provided" });
+    return res.status(401).json({ 
+      status: "error", 
+      message: "No token provided" 
+    });
   }
+
+  // Check JWT secret
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    return res.status(500).json({ status: "error", message: "JWT secret not configured" });
+    return res.status(500).json({ 
+      status: "error", 
+      message: "JWT secret not configured" 
+    });
   }
+
   try {
-    const decoded = jwt.verify(token, secret) as { id: number; username: string };
-    req.admin = { id: decoded.id, username: decoded.username };
+    // Verify and decode token
+    const decoded = jwt.verify(token, secret) as { data: string };
+    
+    // Decrypt user data from token
+    const decryptedData = decryptData(decoded.data) as AuthPayload;
+    
+    // Add admin data to request
+    req.admin = decryptedData;
+    
+    // Continue to next middleware
     next();
   } catch (error) {
-    return res.status(401).json({ status: "error", message: "Invalid token" });
+    // Handle invalid token
+    return res.status(401).json({ 
+      status: "error", 
+      message: "Invalid token" 
+    });
   }
 };
 

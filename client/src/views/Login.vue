@@ -1,4 +1,4 @@
-```vue
+<!-- views/Login.vue -->
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
@@ -97,31 +97,49 @@ export default {
       state.formSubmitted = true;
       state.message = "";
       state.messageType = "";
+      
       if (!validateForm()) {
         state.message = "Please fix the errors in the form";
         state.messageType = "error";
         return;
       }
+      
       state.isLoading = true;
       try {
         const response = await axios.post("/api/admin/auth/login", {
           username: state.form.username.trim(),
           password: state.form.password.trim(),
-        });
-        localStorage.setItem("admin", JSON.stringify(response.data.data));
+        }, { withCredentials: true });
+        
+      
+        
+        // Store admin data with role in localStorage
+        const adminData = {
+          id: response.data.data.id,
+          username: response.data.data.username,
+          email: response.data.data.email,
+          role: response.data.data.role 
+        };
+        
+        console.log("Storing admin data:", adminData); // Debug log
+        localStorage.setItem("admin", JSON.stringify(adminData));
+        
         state.message = "Login successful";
         state.messageType = "success";
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
           state.form.username = "";
           state.form.password = "";
           state.formSubmitted = false;
-          router.push("/home"); 
-        }, 1000); 
+          router.push("/home");
+        }, 1000);
+        
       } catch (error: any) {
         state.message = error.response?.data?.message || "Login failed";
         state.messageType = "error";
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -139,4 +157,3 @@ export default {
   },
 };
 </script>
-```

@@ -1,11 +1,11 @@
-
 <template>
+  <!-- Same HTML as before, no change needed in template for now -->
   <div class="container mx-auto p-4">
     <!-- Navbar -->
     <div class="flex justify-between items-center mb-4 bg-green-600 text-white p-4 rounded">
       <div>
         <span class="text-lg font-semibold">
-          Welcome, {{ adminUsername || 'Guest' }}
+          Welcome, {{ adminUsername || 'Guest' }} ({{ adminRole || 'Unknown' }})
         </span>
       </div>
       <button
@@ -15,6 +15,7 @@
         Logout
       </button>
     </div>
+
     <!-- Add User Form -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">Add New User</h2>
     <div
@@ -24,7 +25,7 @@
     >
       {{ state.message }}
     </div>
-    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+    <div v-if="hasAddPermission" class="bg-white shadow-md rounded-lg p-6 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Name -->
         <div>
@@ -103,6 +104,8 @@
         </button>
       </div>
     </div>
+    <div v-else class="text-red-500 mb-6">You do not have permission to add users.</div>
+
     <!-- User List -->
     <h2 class="text-2xl font-bold text-green-600 mb-4">User List</h2>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg">
@@ -139,7 +142,7 @@
           <tr v-for="user in state.users" :key="user.id" class="border-b">
             <td class="p-3">
               <input
-                v-if="user.isEditing"
+                v-if="user.isEditing && hasEditPermission"
                 v-model="user.first_name"
                 class="p-2 border rounded w-full"
               />
@@ -147,7 +150,7 @@
             </td>
             <td class="p-3">
               <input
-                v-if="user.isEditing"
+                v-if="user.isEditing && hasEditPermission"
                 v-model="user.last_name"
                 class="p-2 border rounded w-full"
               />
@@ -155,7 +158,7 @@
             </td>
             <td class="p-3">
               <input
-                v-if="user.isEditing"
+                v-if="user.isEditing && hasEditPermission"
                 type="date"
                 v-model="user.date_of_birth"
                 class="p-2 border rounded w-full"
@@ -164,7 +167,7 @@
             </td>
             <td class="p-3">
               <input
-                v-if="user.isEditing"
+                v-if="user.isEditing && hasEditPermission"
                 v-model="user.mobile_number"
                 class="p-2 border rounded w-full"
               />
@@ -172,7 +175,7 @@
             </td>
             <td class="p-3">
               <textarea
-                v-if="user.isEditing"
+                v-if="user.isEditing && hasEditPermission"
                 v-model="user.address"
                 class="p-2 border rounded w-full"
               ></textarea>
@@ -181,27 +184,28 @@
             <td class="p-3">
               <div class="flex space-x-2">
                 <button
-                  v-if="!user.isEditing"
+                  v-if="!user.isEditing && hasEditPermission"
                   @click="editUser(user.id)"
                   class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
                 >
                   Edit
                 </button>
                 <button
-                  v-if="user.isEditing"
+                  v-if="user.isEditing && hasEditPermission"
                   @click="updateUser(user.id)"
                   class="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
                 >
                   Update
                 </button>
                 <button
+                  v-if="hasDeletePermission"
                   @click="deleteUser(user.id)"
                   class="bg-red-500 text-white p-2 rounded hover:bg-red-600"
                 >
                   Delete
                 </button>
                 <button
-                  v-if="user.isEditing"
+                  v-if="user.isEditing && hasEditPermission"
                   @click="cancelEdit(user.id)"
                   class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
                 >
@@ -246,7 +250,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, computed } from "vue";
+import { reactive, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 
@@ -267,6 +271,20 @@ interface FormState {
   dateOfBirth: string;
   mobileNumber: string;
   address: string;
+}
+
+interface AdminData {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  permissions?: Permission[];
+}
+
+interface Permission {
+  id: number;
+  name: string;
+  role_id: number;
 }
 
 export default {
@@ -308,10 +326,24 @@ export default {
       searchTimeout: null,
     });
 
-    // Get admin username from localStorage
-    const adminUsername = computed(() => {
-      const adminData = localStorage.getItem("admin");
-      return adminData ? JSON.parse(adminData).username : null;
+    const adminData = computed(() => {
+      const data = localStorage.getItem("admin");
+      return data ? (JSON.parse(data) as AdminData) : null; // Type assertion for AdminData
+    });
+    
+    const adminUsername = computed(() => adminData.value?.username || null);
+    const adminRole = computed(() => adminData.value?.role || null);
+    const adminPermissions = computed(() => adminData.value?.permissions || []);
+
+    // Updated permission checks using permissions array
+    const hasAddPermission = computed(() => {
+      return adminPermissions.value.some(p => p.name === 'add_user') || adminRole.value === 'super_admin' || adminRole.value === 'admin';
+    });
+    const hasEditPermission = computed(() => {
+      return adminPermissions.value.some(p => p.name === 'edit_user') || adminRole.value === 'super_admin' || adminRole.value === 'admin';
+    });
+    const hasDeletePermission = computed(() => {
+      return adminPermissions.value.some(p => p.name === 'delete_user') || adminRole.value === 'super_admin';
     });
 
     const validateForm = () => {
@@ -370,11 +402,19 @@ export default {
       state.formSubmitted = true;
       state.message = "";
       state.messageType = "";
+      
       if (!validateForm()) {
         state.message = "Please fix the errors in the form";
         state.messageType = "error";
         return;
       }
+      
+      if (!hasAddPermission.value) {
+        state.message = "You do not have permission to add users";
+        state.messageType = "error";
+        return;
+      }
+      
       state.isLoading = true;
       try {
         const response = await axios.post(
@@ -385,8 +425,10 @@ export default {
             date_of_birth: state.form.dateOfBirth,
             mobile_number: state.form.mobileNumber.trim(),
             address: state.form.address.trim(),
-          }
+          },
+          { withCredentials: true }
         );
+        
         state.form = {
           firstName: "",
           lastName: "",
@@ -398,18 +440,22 @@ export default {
         state.formSubmitted = false;
         state.message = response.data.message || "User created successfully";
         state.messageType = "success";
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
+        
         await fetchUsers();
       } catch (error: any) {
         state.message = error.response?.data?.message || "Error adding user";
         state.messageType = "error";
+        
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("admin");
           router.push("/login");
         }
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -422,13 +468,16 @@ export default {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(
-          `/api/users?page=${state.currentPage}&limit=5&search=${encodeURIComponent(state.search)}&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`
+          `/api/users?page=${state.currentPage}&limit=5&search=${encodeURIComponent(state.search)}&sortBy=${state.sortColumn || "id"}&order=${state.sortOrder}`,
+          { withCredentials: true }
         );
+        
         state.users = response.data.data || [];
         state.totalPages = response.data.pagination?.totalPages || 1;
       } catch (error: any) {
         state.message = error.response?.data?.message || "Error fetching users";
         state.messageType = "error";
+        
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("admin");
           router.push("/login");
@@ -438,11 +487,23 @@ export default {
 
     const editUser = (id?: number) => {
       if (id === undefined) return;
+      
+      if (!hasEditPermission.value) {
+        state.message = "You do not have permission to edit users";
+        state.messageType = "error";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+        return;
+      }
+      
       state.users.forEach(user => {
         if (user.isEditing && user.id !== id) {
           cancelEdit(user.id);
         }
       });
+      
       state.users = state.users.map((user) =>
         user.id === id ? { ...user, isEditing: true, originalData: { ...user } } : user
       );
@@ -450,8 +511,20 @@ export default {
 
     const updateUser = async (id?: number) => {
       if (id === undefined) return;
+      
+      if (!hasEditPermission.value) {
+        state.message = "You do not have permission to update users";
+        state.messageType = "error";
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+        return;
+      }
+      
       const user = state.users.find((u) => u.id === id);
       if (!user) return;
+      
       state.isLoading = true;
       try {
         const response = await axios.put(
@@ -462,22 +535,28 @@ export default {
             date_of_birth: user.date_of_birth,
             mobile_number: user.mobile_number.trim(),
             address: user.address.trim(),
-          }
+          },
+          { withCredentials: true }
         );
+        
         state.message = response.data.message || "User updated successfully";
         state.messageType = "success";
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
+        
         await fetchUsers();
       } catch (error: any) {
         state.message = error.response?.data?.message || "Error updating user";
         state.messageType = "error";
+        
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("admin");
           router.push("/login");
         }
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -489,26 +568,45 @@ export default {
 
     const deleteUser = async (id?: number) => {
       if (id === undefined) return;
-      if (!confirm("Are you sure you want to delete this user?")) {
-        return;
-      }
-      state.isLoading = true;
-      try {
-        const response = await axios.delete(`/api/users/${id}`);
-        state.message = response.data.message || "User deleted successfully";
-        state.messageType = "success";
+      
+      if (!hasDeletePermission.value) {
+        state.message = "You do not have permission to delete users";
+        state.messageType = "error";
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
         }, 3000);
+        return;
+      }
+      
+      if (!confirm("Are you sure you want to delete this user?")) {
+        return;
+      }
+      
+      state.isLoading = true;
+      try {
+        const response = await axios.delete(`/api/users/${id}`, {
+          withCredentials: true
+        });
+        
+        state.message = response.data.message || "User deleted successfully";
+        state.messageType = "success";
+        
+        setTimeout(() => {
+          state.message = "";
+          state.messageType = "";
+        }, 3000);
+        
         await fetchUsers();
       } catch (error: any) {
         state.message = error.response?.data?.message || "Error deleting user";
         state.messageType = "error";
+        
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("admin");
           router.push("/login");
         }
+        
         setTimeout(() => {
           state.message = "";
           state.messageType = "";
@@ -520,8 +618,10 @@ export default {
 
     const cancelEdit = (id?: number) => {
       if (id === undefined) return;
+      
       const user = state.users.find((u) => u.id === id);
       if (!user) return;
+      
       if (user.originalData) {
         Object.assign(user, user.originalData);
         delete user.originalData;
@@ -529,16 +629,29 @@ export default {
       user.isEditing = false;
     };
 
-    const logout = () => {
-      localStorage.removeItem("admin");
-      router.push("/login");
+    const logout = async () => {
+      try {
+        await axios.post("/api/admin/auth/logout", {}, { withCredentials: true });
+      } catch (error) {
+        console.error("Logout error:", error);
+      } finally {
+        localStorage.removeItem("admin");
+        router.push("/login");
+      }
     };
 
-    fetchUsers();
+    onMounted(() => {
+      fetchUsers();
+    });
 
     return {
       state,
       adminUsername,
+      adminRole,
+      adminPermissions,
+      hasAddPermission,
+      hasEditPermission,
+      hasDeletePermission,
       validateForm,
       formatDate,
       addUser,

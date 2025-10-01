@@ -3,13 +3,13 @@ import { body } from "express-validator";
 import { getAllUsers, getUserById, createUser, updateUser, deleteUser } from "../controllers/userController";
 import authMiddleware from "../middleware/authMiddleware"
 
-
 const router = express.Router();
 
-// AUTH ROUTE
+// All routes require authentication
+router.get('/users', authMiddleware, getAllUsers);
+router.get('/users/:id', authMiddleware, getUserById);
 
-router.get('/users', authMiddleware ,getAllUsers);
-router.get('/users/:id', authMiddleware ,getUserById);
+// Create user with validation
 router.post(
   '/users',
   [
@@ -22,6 +22,8 @@ router.post(
   authMiddleware,
   createUser
 );
+
+// Update user with validation
 router.put(
   '/users/:id',
   [
@@ -34,6 +36,8 @@ router.put(
   authMiddleware,
   updateUser
 );
-router.delete('/users/:id', authMiddleware ,deleteUser);
+
+// Delete user
+router.delete('/users/:id', authMiddleware, deleteUser);
 
 export default router;
