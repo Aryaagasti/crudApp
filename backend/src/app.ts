@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173", // Frontend ka URL (Vite default port)
+    origin: ["https://crud-app-nine-ebon.vercel.app/", "http://localhost:513"], // Frontend ka URL (Vite default port)
     credentials: true, 
   })
 );
