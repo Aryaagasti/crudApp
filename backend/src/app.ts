@@ -1,3 +1,55 @@
+
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+
+dotenv.config();
+
+// ✅ ENVIRONMENT VARIABLES CHECK KARO
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET missing in .env file');
+  process.exit(1);
+}
+
+if (!process.env.ENCRYPTION_KEY) {
+  console.error('❌ ENCRYPTION_KEY missing in .env file');
+  process.exit(1);
+}
+
+if (process.env.ENCRYPTION_KEY.length !== 32) {
+  console.error('❌ ENCRYPTION_KEY must be exactly 32 characters long');
+  process.exit(1);
+}
+
+console.log('✅ Environment variables loaded successfully');
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: ["https://crud-app-nine-ebon.vercel.app/", "http://localhost:513"], // Frontend ka URL (Vite default port)
+    credentials: true, 
+  })
+);
+
+// Routes
+import userRoutes from "./routes/userRoutes";
+import authRoutes from "./routes/authRoutes";
+
+app.use("/api/admin", authRoutes);
+app.use("/api", userRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+/// ✅ Create default user with role_id 3 using direct pool query
+import pool from "./config/db"; // Adjust path according to your project
+import bcrypt from 'bcrypt';
+
 const createDefaultUsers = async () => {
   try {
     // 1. Check and create Super Admin
@@ -69,3 +121,5 @@ const createDefaultUsers = async () => {
 
 // ✅ ISKO BHI COMMENT KARDO - Only uncomment for first time
 createDefaultUsers();
+
+export default app;
